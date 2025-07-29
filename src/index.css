@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ✅ Custom button styles */
+/* Add this to your main CSS file */
+.dark {
+  color-scheme: dark;
+}
+
+/* Force specific dark mode classes to be generated */
+.dark .bg-gray-800 { background-color: rgb(31 41 55) !important; }
+.dark .bg-gray-700 { background-color: rgb(55 65 81) !important; }
+.dark .text-white { color: rgb(255 255 255) !important; }
+.dark .text-gray-300 { color: rgb(209 213 219) !important; }
+.dark .text-gray-400 { color: rgb(156 163 175) !important; }
+.dark .border-gray-700 { border-color: rgb(55 65 81) !important; }
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+button:hover {
+  border-color: #646cff;
+}
+
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
