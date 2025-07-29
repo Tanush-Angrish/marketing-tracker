@@ -1,12 +1,56 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
-  Home, User,  Bell, Search, Plus, Filter,  
+  Home, User, Bell, Search, Plus, Filter,  
   BarChart3, Users, FolderOpen, MessageSquare, CheckCircle2, 
-   Star,  Menu,
-  Sun, Moon, Upload, Download, Edit2,  Eye, Play,
-   MoreHorizontal, Heart, Share2, X,
-  ArrowUp, CheckSquare
+  Star, Menu, Sun, Moon, Upload, Download, Edit2, Eye, Play,
+  MoreHorizontal, Heart, Share2, X, ArrowUp, CheckSquare
 } from 'lucide-react';
+
+// Type definitions
+interface Campaign {
+  id: number;
+  name: string;
+  status: 'Active' | 'Draft' | 'Completed';
+  progress: number;
+  startDate: string;
+  endDate: string;
+  team: string[];
+  tasks: number;
+  completedTasks: number;
+  channels: string[];
+  tags: string[];
+}
+
+interface Task {
+  id: number;
+  title: string;
+  description: string;
+  status: 'In Progress' | 'Todo' | 'Review' | 'Done';
+  priority: 'High' | 'Medium' | 'Low';
+  assignee: string;
+  campaign: string;
+  dueDate: string;
+  tags: string[];
+  comments: number;
+}
+
+interface Notification {
+  id: number;
+  message: string;
+  time: string;
+  read: boolean;
+}
+
+interface FeedbackRequest {
+  id: number;
+  title: string;
+  campaign: string;
+  status: 'Pending' | 'Approved' | 'Needs Changes';
+  requester: string;
+  created: string;
+  priority: 'High' | 'Medium' | 'Low';
+  comments: number;
+}
 
 // Mock Data
 const mockUser = {
@@ -17,7 +61,7 @@ const mockUser = {
   avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face'
 };
 
-const mockCampaigns = [
+const mockCampaigns: Campaign[] = [
   {
     id: 1,
     name: 'Q4 Product Launch',
@@ -59,7 +103,7 @@ const mockCampaigns = [
   }
 ];
 
-const mockTasks = [
+const mockTasks: Task[] = [
   {
     id: 1,
     title: 'Create product demo video',
@@ -110,7 +154,7 @@ const mockTasks = [
   }
 ];
 
-const mockNotifications = [
+const mockNotifications: Notification[] = [
   { id: 1, message: 'New task assigned: Create product demo video', time: '5 minutes ago', read: false },
   { id: 2, message: 'Campaign "Q4 Product Launch" updated', time: '1 hour ago', read: false },
   { id: 3, message: 'Comment added to "Write blog post"', time: '2 hours ago', read: true },
@@ -123,25 +167,28 @@ export default function MarketingTracker() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState(null);
-  const [selectedTask, setSelectedTask] = useState(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskView, setTaskView] = useState('kanban');
   const [searchQuery, setSearchQuery] = useState('');
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   
-  const commandPaletteRef = useRef(null);
+  const commandPaletteRef = useRef<HTMLDivElement | null>(null);
 
-  // Apply dark mode to document
+  // Apply dark mode to document - FIXED
   useEffect(() => {
+    const root = document.documentElement;
     if (darkMode) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
+      root.style.colorScheme = 'dark';
     } else {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
+      root.style.colorScheme = 'light';
     }
   }, [darkMode]);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         setShowCommandPalette(true);
@@ -161,8 +208,11 @@ export default function MarketingTracker() {
   useEffect(() => {
     if (!showCommandPalette) return;
 
-    const handleClickOutside = (event) => {
-      if (commandPaletteRef.current && !commandPaletteRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        commandPaletteRef.current &&
+        !commandPaletteRef.current.contains(event.target as Node)
+      ) {
         setShowCommandPalette(false);
       }
     };
@@ -175,39 +225,42 @@ export default function MarketingTracker() {
 
   const getUnreadNotifications = () => notifications.filter(n => !n.read).length;
 
-  const markNotificationAsRead = (id) => {
+  const markNotificationAsRead = (id: number | string) => {
     setNotifications(prev => 
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     );
   };
 
-  const StatusBadge = ({ status }) => {
-    const colors = {
-      'Active': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-      'Draft': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-      'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-      'In Progress': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-      'Todo': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-      'Review': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-      'Done': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-    };
-    
+  const statusColors = {
+    'Active': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    'Draft': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    'Completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+    'In Progress': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+    'Todo': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+    'Review': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+    'Done': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    'Approved': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    'Needs Changes': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+  };
+
+  const StatusBadge = ({ status }: { status: keyof typeof statusColors }) => {
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status] || colors['Draft']}`}>
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[status] || statusColors['Draft']}`}>
         {status}
       </span>
     );
   };
 
-  const PriorityBadge = ({ priority }) => {
-    const colors = {
-      'High': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-      'Medium': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-      'Low': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-    };
-    
+  const priorityColors = {
+    'High': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    'Medium': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    'Low': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+  };
+
+  const PriorityBadge = ({ priority }: { priority: keyof typeof priorityColors }) => {
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[priority] || colors['Medium']}`}>
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityColors[priority] || priorityColors['Medium']}`}>
         {priority}
       </span>
     );
@@ -294,7 +347,7 @@ export default function MarketingTracker() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setShowCommandPalette(true)}
-            className="pl-10 pr-4 py-2 w-80 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+            className="pl-10 pr-4 py-2 w-80 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:placeholder-gray-400"
           />
         </div>
       </div>
@@ -303,8 +356,13 @@ export default function MarketingTracker() {
         <button
           onClick={() => setDarkMode(!darkMode)}
           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
-          {darkMode ? <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400" /> : <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
+          {darkMode ? (
+            <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          ) : (
+            <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          )}
         </button>
         
         <div className="relative">
@@ -359,13 +417,13 @@ export default function MarketingTracker() {
           <p className="text-gray-600 dark:text-gray-400">Welcome back, {mockUser.name}</p>
         </div>
         <div className="flex items-center gap-3">
-          <select className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white">
             <option>Last 30 days</option>
             <option>Last 7 days</option>
             <option>This month</option>
           </select>
           <button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             Export
           </button>
         </div>
@@ -388,8 +446,18 @@ export default function MarketingTracker() {
                   {stat.change} from last month
                 </p>
               </div>
-              <div className={`p-3 rounded-lg bg-${stat.color}-100 dark:bg-${stat.color}-900/20`}>
-                <stat.icon className={`w-6 h-6 text-${stat.color}-600 dark:text-${stat.color}-400`} />
+              <div className={`p-3 rounded-lg ${
+                stat.color === 'blue' ? 'bg-blue-100 dark:bg-blue-900/20' :
+                stat.color === 'green' ? 'bg-green-100 dark:bg-green-900/20' :
+                stat.color === 'purple' ? 'bg-purple-100 dark:bg-purple-900/20' :
+                'bg-orange-100 dark:bg-orange-900/20'
+              }`}>
+                <stat.icon className={`w-6 h-6 ${
+                  stat.color === 'blue' ? 'text-blue-600 dark:text-blue-400' :
+                  stat.color === 'green' ? 'text-green-600 dark:text-green-400' :
+                  stat.color === 'purple' ? 'text-purple-600 dark:text-purple-400' :
+                  'text-orange-600 dark:text-orange-400'
+                }`} />
               </div>
             </div>
           </div>
@@ -438,8 +506,18 @@ export default function MarketingTracker() {
                 key={index}
                 className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200 hover:scale-105"
               >
-                <div className={`p-2 rounded-lg bg-${action.color}-100 dark:bg-${action.color}-900/20`}>
-                  <action.icon className={`w-4 h-4 text-${action.color}-600 dark:text-${action.color}-400`} />
+                <div className={`p-2 rounded-lg ${
+                  action.color === 'blue' ? 'bg-blue-100 dark:bg-blue-900/20' :
+                  action.color === 'green' ? 'bg-green-100 dark:bg-green-900/20' :
+                  action.color === 'purple' ? 'bg-purple-100 dark:bg-purple-900/20' :
+                  'bg-orange-100 dark:bg-orange-900/20'
+                }`}>
+                  <action.icon className={`w-4 h-4 ${
+                    action.color === 'blue' ? 'text-blue-600 dark:text-blue-400' :
+                    action.color === 'green' ? 'text-green-600 dark:text-green-400' :
+                    action.color === 'purple' ? 'text-purple-600 dark:text-purple-400' :
+                    'text-orange-600 dark:text-orange-400'
+                  }`} />
                 </div>
                 <span className="font-medium text-gray-900 dark:text-white">{action.label}</span>
               </button>
@@ -459,7 +537,7 @@ export default function MarketingTracker() {
         </div>
         <div className="flex items-center gap-3">
           <button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
-            <Filter className="w-4 h-4" />
+            <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             Filter
           </button>
           <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
@@ -506,7 +584,7 @@ export default function MarketingTracker() {
                       key={index}
                       className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs text-white font-medium"
                     >
-                      {member.split(' ').map(n => n[0]).join('')}
+                      {member.split(' ').map((n: string) => n[0]).join('')}
                     </div>
                   ))}
                   {campaign.team.length > 3 && (
@@ -573,7 +651,7 @@ export default function MarketingTracker() {
 
       {taskView === 'kanban' ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {['Todo', 'In Progress', 'Review', 'Done'].map(status => (
+          {(['Todo', 'In Progress', 'Review', 'Done'] as const).map(status => (
             <div key={status} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white">{status}</h3>
@@ -624,12 +702,12 @@ export default function MarketingTracker() {
                 <Filter className="w-4 h-4" />
                 Filter
               </button>
-              <select className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm">
+              <select className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm dark:text-white">
                 <option>All Campaigns</option>
                 <option>Q4 Product Launch</option>
                 <option>Holiday Email Campaign</option>
               </select>
-              <select className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm">
+              <select className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm dark:text-white">
                 <option>All Assignees</option>
                 <option>Sarah J.</option>
                 <option>Mike R.</option>
@@ -696,7 +774,7 @@ export default function MarketingTracker() {
         </div>
         <div className="flex items-center gap-3">
           <button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
-            <FolderOpen className="w-4 h-4" />
+            <FolderOpen className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             New Folder
           </button>
           <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
@@ -725,11 +803,9 @@ export default function MarketingTracker() {
         <div className="md:col-span-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-semibold text-gray-900 dark:text-white">Recent Files</h3>
-            <div className="flex items-center gap-2">
-              <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
-            </div>
+            <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+              <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </button>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -848,7 +924,7 @@ export default function MarketingTracker() {
           <p className="text-gray-600 dark:text-gray-400">Track performance and insights</p>
         </div>
         <div className="flex items-center gap-3">
-          <select className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white">
             <option>Last 30 days</option>
             <option>Last 7 days</option>
             <option>This month</option>
@@ -878,8 +954,18 @@ export default function MarketingTracker() {
                   {metric.change} from last period
                 </p>
               </div>
-              <div className={`p-3 rounded-lg bg-${metric.color}-100 dark:bg-${metric.color}-900/20`}>
-                <metric.icon className={`w-6 h-6 text-${metric.color}-600 dark:text-${metric.color}-400`} />
+              <div className={`p-3 rounded-lg ${
+                metric.color === 'green' ? 'bg-green-100 dark:bg-green-900/20' :
+                metric.color === 'blue' ? 'bg-blue-100 dark:bg-blue-900/20' :
+                metric.color === 'red' ? 'bg-red-100 dark:bg-red-900/20' :
+                'bg-yellow-100 dark:bg-yellow-900/20'
+              }`}>
+                <metric.icon className={`w-6 h-6 ${
+                  metric.color === 'green' ? 'text-green-600 dark:text-green-400' :
+                  metric.color === 'blue' ? 'text-blue-600 dark:text-blue-400' :
+                  metric.color === 'red' ? 'text-red-600 dark:text-red-400' :
+                  'text-yellow-600 dark:text-yellow-400'
+                }`} />
               </div>
             </div>
           </div>
@@ -930,9 +1016,9 @@ export default function MarketingTracker() {
             </thead>
             <tbody>
               {[
-                { name: 'Q4 Product Launch', impressions: '125K', clicks: '4.2K', conversions: '312', roi: '+245%', status: 'Active' },
-                { name: 'Holiday Email Campaign', impressions: '89K', clicks: '2.8K', conversions: '189', roi: '+189%', status: 'Draft' },
-                { name: 'Brand Awareness Initiative', impressions: '234K', clicks: '7.1K', conversions: '456', roi: '+324%', status: 'Completed' }
+                { name: 'Q4 Product Launch', impressions: '125K', clicks: '4.2K', conversions: '312', roi: '+245%', status: 'Active' as const },
+                { name: 'Holiday Email Campaign', impressions: '89K', clicks: '2.8K', conversions: '189', roi: '+189%', status: 'Draft' as const },
+                { name: 'Brand Awareness Initiative', impressions: '234K', clicks: '7.1K', conversions: '456', roi: '+324%', status: 'Completed' as const }
               ].map((campaign, index) => (
                 <tr key={index} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="p-4 font-medium text-gray-900 dark:text-white">{campaign.name}</td>
@@ -952,141 +1038,150 @@ export default function MarketingTracker() {
     </div>
   );
 
-  const FeedbackView = () => (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Feedback & Approvals</h1>
-          <p className="text-gray-600 dark:text-gray-400">Review and manage feedback requests</p>
-        </div>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          New Request
-        </button>
-      </div>
+  const FeedbackView = () => {
+    const feedbackRequests: FeedbackRequest[] = [
+      {
+        id: 1,
+        title: 'Product Demo Video Review',
+        campaign: 'Q4 Product Launch',
+        status: 'Pending',
+        requester: 'Mike R.',
+        created: '2 hours ago',
+        priority: 'High',
+        comments: 3
+      },
+      {
+        id: 2,
+        title: 'Email Template Approval',
+        campaign: 'Holiday Email Campaign',
+        status: 'Approved',
+        requester: 'Anna K.',
+        created: '1 day ago',
+        priority: 'Medium',
+        comments: 5
+      },
+      {
+        id: 3,
+        title: 'Blog Post Content Review',
+        campaign: 'Q4 Product Launch',
+        status: 'Needs Changes',
+        requester: 'Sarah J.',
+        created: '2 days ago',
+        priority: 'High',
+        comments: 8
+      }
+    ];
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
-          {[
-            {
-              id: 1,
-              title: 'Product Demo Video Review',
-              campaign: 'Q4 Product Launch',
-              status: 'Pending',
-              requester: 'Mike R.',
-              created: '2 hours ago',
-              priority: 'High',
-              comments: 3
-            },
-            {
-              id: 2,
-              title: 'Email Template Approval',
-              campaign: 'Holiday Email Campaign',
-              status: 'Approved',
-              requester: 'Anna K.',
-              created: '1 day ago',
-              priority: 'Medium',
-              comments: 5
-            },
-            {
-              id: 3,
-              title: 'Blog Post Content Review',
-              campaign: 'Q4 Product Launch',
-              status: 'Needs Changes',
-              requester: 'Sarah J.',
-              created: '2 days ago',
-              priority: 'High',
-              comments: 8
-            }
-          ].map(request => (
-            <div key={request.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-lg">{request.title}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{request.campaign}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <PriorityBadge priority={request.priority} />
-                  <StatusBadge status={request.status} />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-4">
-                <span>By {request.requester}</span>
-                <span>{request.created}</span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1">
-                    <MessageSquare className="w-4 h-4" />
-                    <span className="text-sm">{request.comments} comments</span>
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Feedback & Approvals</h1>
+            <p className="text-gray-600 dark:text-gray-400">Review and manage feedback requests</p>
+          </div>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            New Request
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-4">
+            {feedbackRequests.map(request => (
+              <div key={request.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">{request.title}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{request.campaign}</p>
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  {request.status === 'Pending' && (
-                    <>
-                      <button className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
-                        Approve
-                      </button>
-                      <button className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
-                        Reject
-                      </button>
-                    </>
-                  )}
-                  <button className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm">
-                    View Details
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Approval Stats</h3>
-            <div className="space-y-4">
-              {[
-                { label: 'Pending Review', count: 3, color: 'yellow' },
-                { label: 'Approved', count: 12, color: 'green' },
-                { label: 'Needs Changes', count: 2, color: 'red' },
-                { label: 'In Progress', count: 5, color: 'blue' }
-              ].map((stat, index) => (
-                <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full bg-${stat.color}-500`}></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</span>
+                    <PriorityBadge priority={request.priority} />
+                    <StatusBadge status={request.status} />
                   </div>
-                  <span className="font-medium text-gray-900 dark:text-white">{stat.count}</span>
                 </div>
-              ))}
-            </div>
+                
+                <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  <span>By {request.requester}</span>
+                  <span>{request.created}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <MessageSquare className="w-4 h-4" />
+                      <span className="text-sm">{request.comments} comments</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {request.status === 'Pending' && (
+                      <>
+                        <button className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                          Approve
+                        </button>
+                        <button className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    <button className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm">
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
-            <div className="space-y-3">
-              {[
-                { action: 'Video approved', user: 'CEO', time: '1h ago' },
-                { action: 'Comment added', user: 'Sarah J.', time: '2h ago' },
-                { action: 'Review requested', user: 'Mike R.', time: '3h ago' },
-                { action: 'Changes requested', user: 'Marketing Lead', time: '5h ago' }
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center justify-between py-2">
-                  <div>
-                    <p className="text-sm text-gray-900 dark:text-white">{activity.action}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">by {activity.user}</p>
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Approval Stats</h3>
+              <div className="space-y-4">
+                {[
+                  { label: 'Pending Review', count: 3, color: 'yellow' },
+                  { label: 'Approved', count: 12, color: 'green' },
+                  { label: 'Needs Changes', count: 2, color: 'red' },
+                  { label: 'In Progress', count: 5, color: 'blue' }
+                ].map((stat, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${
+                        stat.color === 'yellow' ? 'bg-yellow-500' :
+                        stat.color === 'green' ? 'bg-green-500' :
+                        stat.color === 'red' ? 'bg-red-500' :
+                        'bg-blue-500'
+                      }`}></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</span>
+                    </div>
+                    <span className="font-medium text-gray-900 dark:text-white">{stat.count}</span>
                   </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</span>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
+              <div className="space-y-3">
+                {[
+                  { action: 'Video approved', user: 'CEO', time: '1h ago' },
+                  { action: 'Comment added', user: 'Sarah J.', time: '2h ago' },
+                  { action: 'Review requested', user: 'Mike R.', time: '3h ago' },
+                  { action: 'Changes requested', user: 'Marketing Lead', time: '5h ago' }
+                ].map((activity, index) => (
+                  <div key={index} className="flex items-center justify-between py-2">
+                    <div>
+                      <p className="text-sm text-gray-900 dark:text-white">{activity.action}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">by {activity.user}</p>
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Command Palette Modal - FIXED WITH CLOSE BUTTON AND OUTSIDE CLICK
   const CommandPalette = () => {
@@ -1113,7 +1208,7 @@ export default function MarketingTracker() {
               <input
                 type="text"
                 placeholder="Search campaigns, tasks, team members..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:placeholder-gray-400"
                 autoFocus
               />
             </div>
@@ -1214,10 +1309,10 @@ export default function MarketingTracker() {
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Team Members</h3>
                   <div className="space-y-3">
-                    {selectedCampaign.team.map((member, index) => (
+                    {selectedCampaign.team.map((member: string, index: number) => (
                       <div key={index} className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                          {member.split(' ').map(n => n[0]).join('')}
+                          {member.split(' ').map((n: string) => n[0]).join('')}
                         </div>
                         <span className="text-sm text-gray-900 dark:text-white">{member}</span>
                       </div>
@@ -1228,7 +1323,7 @@ export default function MarketingTracker() {
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Channels</h3>
                   <div className="space-y-2">
-                    {selectedCampaign.channels.map((channel, index) => (
+                    {selectedCampaign.channels.map((channel: string, index: number) => (
                       <div key={index} className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                         <span className="text-sm text-gray-900 dark:text-white">{channel}</span>
@@ -1240,7 +1335,7 @@ export default function MarketingTracker() {
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Tags</h3>
                   <div className="flex flex-wrap gap-2">
-                    {selectedCampaign.tags.map((tag, index) => (
+                    {selectedCampaign.tags.map((tag: string, index: number) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-sm rounded-full"
@@ -1295,7 +1390,7 @@ export default function MarketingTracker() {
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Assignee</h3>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                    {selectedTask.assignee.split(' ').map(n => n[0]).join('')}
+                    {selectedTask.assignee.split(' ').map((n: string) => n[0]).join('')}
                   </div>
                   <span className="text-gray-900 dark:text-white">{selectedTask.assignee}</span>
                 </div>
@@ -1304,7 +1399,7 @@ export default function MarketingTracker() {
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Tags</h3>
                 <div className="flex flex-wrap gap-2">
-                  {selectedTask.tags.map((tag, index) => (
+                  {selectedTask.tags.map((tag: string, index: number) => (
                     <span
                       key={index}
                       className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-full"
@@ -1336,8 +1431,8 @@ export default function MarketingTracker() {
                 <div className="mt-4">
                   <textarea
                     placeholder="Add a comment..."
-                    className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white resize-none"
-                    rows="3"
+                    className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:placeholder-gray-400 resize-none"
+                    rows={3}
                   ></textarea>
                   <div className="flex justify-end mt-2">
                     <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
@@ -1375,7 +1470,7 @@ export default function MarketingTracker() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300`}>
+    <div className="min-h-screen transition-colors duration-300">
       <div className="flex bg-gray-50 dark:bg-gray-900 min-h-screen">
         <Sidebar />
         <div className="flex-1 flex flex-col">
