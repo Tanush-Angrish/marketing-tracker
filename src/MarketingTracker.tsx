@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
-  Home, User, Settings, Bell, Search, Plus, Filter, Calendar, 
+  Home, User,  Bell, Search, Plus, Filter,  
   BarChart3, Users, FolderOpen, MessageSquare, CheckCircle2, 
-  Clock, AlertCircle, Star, ChevronDown, ChevronRight, Menu,
-  Sun, Moon, Upload, Download, Edit2, Trash2, Eye, Play,
-  Pause, Square, MoreHorizontal, Tag, Heart, Share2, X,
-  ArrowUp, ArrowDown, ArrowRight, CheckSquare, Circle
+   Star,  Menu,
+  Sun, Moon, Upload, Download, Edit2,  Eye, Play,
+   MoreHorizontal, Heart, Share2, X,
+  ArrowUp, CheckSquare
 } from 'lucide-react';
 
 // Mock Data
